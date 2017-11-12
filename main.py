@@ -17,8 +17,9 @@ from mtcnn_detect import MTCNNDetect
 from tf_graph import FaceRecGraph
 import argparse
 import sys
-import json
+import json, time
 import numpy as np
+import skvideo.io
 
 def main(args):
     mode = args.mode
@@ -51,6 +52,7 @@ def camera_recog():
             aligned_face, face_pos = aligner.align(160,frame,landmarks[i])
             aligns.append(aligned_face)
             positions.append(face_pos)
+
         features_arr = extract_feature.get_features(aligns)
         recog_data = findPeople(features_arr,positions);
         for (i,rect) in enumerate(rects):
@@ -111,6 +113,7 @@ User input his/her name or ID -> Images from Video Capture -> detect the face ->
     
 '''
 def create_manual_data():
+    #vs = skvideo.io.VideoCapture(0); #get input from webcam
     vs = cv2.VideoCapture(0); #get input from webcam
     print("Please input new user ID:")
     new_name = input(); #ez python input()
@@ -121,11 +124,13 @@ def create_manual_data():
     print("Please start turning slowly. Press 'q' to save and add this new user to the dataset");
     while True:
         _, frame = vs.read();
+        time.sleep(0.5)
         rects, landmarks = face_detect.detect_face(frame, 80);  # min face size is set to 80x80
         for (i, rect) in enumerate(rects):
             aligned_frame, pos = aligner.align(160,frame,landmarks[i]);
             person_imgs[pos].append(aligned_frame)
-            cv2.imshow("Captured face", aligned_frame)
+            cv2.rectangle(frame,(rect[0],rect[1]),(rect[0] + rect[2],rect[1]+rect[3]),(0,0,255),2)
+        cv2.imshow("Captured face", frame)
         key = cv2.waitKey(1) & 0xFF
         if key == ord("q"):
             break
